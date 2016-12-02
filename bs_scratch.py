@@ -5,14 +5,61 @@ Created on Thu Dec  1 10:53:23 2016
 @author: emg
 """
 
-import urllib2
+import requests
 from bs4 import BeautifulSoup
 import re
+import pandas as pd
 
-url = 'http://web.archive.org/web/20161007131752/https://www.reddit.com/r/The_Donald/about/moderators/'
-page = urllib2.urlopen(url)
+##### SCRAPE PAGE
+url = 'https://web.archive.org/web/20161007131752/https://www.reddit.com/r/The_Donald/about/moderators/'
+timestamp = url.split('/web/')[1].split('/https')[0]
+#url = 'https://www.reddit.com/r/The_Donald/about/moderators/'
+headers = {'user-agent': 'why_ask_reddit 1.0'}
+r = requests.get(url, headers=headers)
 
-soup = BeautifulSoup(page)
+soup = BeautifulSoup(r.text, "html5lib")
+
+###### GET MOD INFO 
+users = soup.find_all(href=re.compile("/user/"))
+mods = users[10:] # skipping double entries on top 10 mods from sidebar 
+    
+name = []
+href = []
+datetime = []
+date = []
+permissions = []
+postkarma = []
+for mod in mods:
+    info = mod.parent.parent.parent
+    children = info.findChildren()
+    name.append(children[9]['value'])
+    href.append(children[2]['href'])
+    datetime.append(children[5]['datetime'])
+    date.append(children[5]['title'])
+    permissions.append(children[8].findChildren()[2]['value'])
+    postkarma.append(children[3])
+
+columns = {'name': name, 'useraccount': href, 'permissions' : permissions, 'postkarma' : postkarma, 'datetime': datetime, 'date' : date}
+df2 = pd.DataFrame(columns)
+df2['timestamp'] = timestamp
+
+
+
+    
+##### GET MOD PROMOTION TIMES
+times = soup.findAll(name='time')
+# times[0] is time subreddit was created
+    
+
+
+
+
+
+###### found mod table
+usertable = soup.findAll('div', {"class" : "moderator-table"})
+usertable = usertable[0]
+
+##### scratch
 
 soup.prettify() # look at nested structure
 
@@ -87,15 +134,6 @@ for child in children[:5]:
     names.append(name)
     
 
-names = []
-users = soup.find_all(href=re.compile("user"))
-for x in users:
-    url = x['href']
-    print url
-    name = url.split('/user/')[1]
-    names.append(name.strip('/'))
-    
-# 10 names are repeats, first instance w/o '/' at end
-# 41 modnames found
+
     
 
