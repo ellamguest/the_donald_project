@@ -24,12 +24,6 @@ for x in links:
 
 urls = urls[5:-3] # 67!
  
-dfs = []
-n = 0
-for url in urls:
-    print n
-    scrape_mod_table(url, dfs)
-    n+=1
    
 mod_hist = pd.concat(dfs)
 mod_hist['archived'] = mod_hist.useraccount.str[5:19]
@@ -39,6 +33,11 @@ mod_hist.to_csv('t_d_mod_hist.csv')
 mods = pd.read_csv('t_d_mod_hist.csv')
 mods.rename(columns={'Unnamed: 0':'rank'}, inplace=True)
 
+##### GET MOD LIST FROM EACH ARCHIVE.IT SNAPSHOT
+# 67 snapshots
+sample = urls[:5]
+
+x = compile_dfs(urls)
 
 
  
