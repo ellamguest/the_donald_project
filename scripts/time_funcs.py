@@ -29,8 +29,8 @@ def get_timeline(df):
         for presence of mod at timepoint'''
     subset = (df[['name', 'date', 'pubdate']]  
             .assign(
-                date = pd.to_datetime(subset['date']).dt.normalize(),
-                pubdate = pd.to_datetime(subset['pubdate']).dt.normalize()))
+                date = pd.to_datetime(df['date']).dt.normalize(),
+                pubdate = pd.to_datetime(df['pubdate']).dt.normalize()))
                 
     seen = (subset
                     .groupby(['date', 'name']).first()['pubdate']

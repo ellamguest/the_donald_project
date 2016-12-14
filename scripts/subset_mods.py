@@ -9,8 +9,7 @@ import pandas as pd
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/andy_output.csv', index_col=0)
 
-
 # SELECTING MODS PRESENT OVER MANY DAYS
 days = df.sum()
 names = days[days>=10]
-df = df[df['name'].isin(names.index)]
+df = df[names.index]

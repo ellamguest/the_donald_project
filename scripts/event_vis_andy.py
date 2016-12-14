@@ -19,6 +19,8 @@ subset = (df[['name', 'date', 'pubdate']].copy()
                 date=lambda df: df['date'].pipe(pd.to_datetime).dt.normalize(),
                 pubdate=lambda df: df['pubdate'].pipe(pd.to_datetime).dt.normalize()))
 
+subset = subset.sort_values(['name','date'])
+
 seen = (subset
                 .groupby(['date', 'name']).first()['pubdate']
                 .unstack()
@@ -45,8 +47,14 @@ for d in seen.index & not_seen.index:
     output[d] = current.copy()
 output = pd.concat(output, 1).T
 
-    
-cg = sns.clustermap(output.resample('W').last().iloc[:, :100], row_cluster=False)
+#GET SUBSET OF MODS PRESENT FOR AT LEAST 1 WHOLE WEEK?
+weeks = output.resample('W').last()
+s = weeks.sum()
+s = s[s>0]
+weeks = weeks[s.index]
+
+  
+cg = sns.clustermap(weeks, row_cluster=False)
 #plt.yticks(rotation=0)
 plt.gcf().set_size_inches(24, 12)
 

@@ -7,10 +7,11 @@ Created on Tue Dec 13 15:42:42 2016
 import pandas as pd
 import seaborn as sns
 import scipy.cluster.hierarchy as hca
+import matplotlib.pyplot as plt
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/andy_output.csv', index_col=0)
 df.index = pd.to_datetime(df.index)
-df = df.astype('bool')
+
 
 # GET TIME CLUSTERS
 
@@ -32,20 +33,32 @@ cdf.groupby('cluster')['cluster'].count()
 
 cdf.plot(kind='bar')
 
+weeks = df.resample('W').mean()
+
+
 # GET MOD CLUSTER
 #mods = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/modxtime.csv', index_col=0)
-mods = df.T
+mods = df.resample('W').mean().T
 get_den(mods)
 
-max_d = 5
+max_d = 2.3
 cdf = get_fclusters(mods, max_d)
 cdf.groupby('cluster')['cluster'].count()
 
-sns.clustermap(mods, col_cluster=False)
+cdf.sort_values('cluster', inplace=True)
+cdf.plot(kind='bar')
 
 cdf.set_index('unit', inplace=True)
 mods['CLUSTER'] = cdf['cluster']
+mods.sort_values('CLUSTER',inplace=True)
 
-cdf.sort_values('cluster', inplace=True)
-cdf.plot(kind='bar')
+sns.clustermap(mods, col_cluster=False)
+sns.clustermap(mods, row_cluster=False)
+
+#CLUSTERMAP OF TIMES W/ MODS ORGANISED BY CLUSTER
+cg = sns.clustermap(mods, col_cluster=False)
+cg.ax
+plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
+plt.gcf().set_size_inches(10, 15)
+
 
