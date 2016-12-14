@@ -9,14 +9,16 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt 
 import scipy as sp
-import numpy as np
 
-df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv')
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv', index_col=0)
+ap = df[df['permissions']=='+all']
+
 
 subset = (df[['name', 'date', 'pubdate']].copy()
             .assign(
                 date=lambda df: df['date'].pipe(pd.to_datetime).dt.normalize(),
                 pubdate=lambda df: df['pubdate'].pipe(pd.to_datetime).dt.normalize()))
+
 seen = (subset
                 .groupby(['date', 'name']).first()['pubdate']
                 .unstack()
@@ -25,6 +27,7 @@ seen = (subset
                 .resample('D').mean()
                 .fillna(0)
                 .astype(bool))
+
 
 not_seen = (subset
                 .groupby(['pubdate', 'name']).first()['date']

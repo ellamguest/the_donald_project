@@ -17,6 +17,8 @@ df = df.astype('bool')
 def get_den(data):
         link = hca.linkage(data)
         return hca.dendrogram(link)
+    
+get_den(df)
 
 def get_fclusters(data, max_dist):
         fcluster = hca.fcluster(hca.linkage(data), max_d, criterion='distance')
@@ -24,17 +26,18 @@ def get_fclusters(data, max_dist):
         df['unit'], df['cluster'] = data.index, fcluster
         return df
 
-max_d = 4.5
+max_d = 3.5
 cdf = get_fclusters(df, max_d)
 cdf.groupby('cluster')['cluster'].count()
 
 cdf.plot(kind='bar')
 
 # GET MOD CLUSTER
-mods = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/modxtime.csv', index_col=0)
+#mods = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/modxtime.csv', index_col=0)
+mods = df.T
 get_den(mods)
 
-max_d = 6.5
+max_d = 5
 cdf = get_fclusters(mods, max_d)
 cdf.groupby('cluster')['cluster'].count()
 
