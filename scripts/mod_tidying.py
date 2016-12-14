@@ -13,3 +13,4 @@ mods = df.T.astype(int)
 sums = mods.sum(axis=1)
 nones = sums[sums == 0]
 mods = mods[~mods.index.isin(nones.index)]
+mods.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/modxtime.csv')

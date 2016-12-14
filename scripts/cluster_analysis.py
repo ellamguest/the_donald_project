@@ -5,10 +5,12 @@ Created on Tue Dec 13 15:42:42 2016
 @author: emg
 """
 import pandas as pd
-import matplotlib.pyplot as plt
+import seaborn as sns
 import scipy.cluster.hierarchy as hca
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/andy_output.csv', index_col=0)
+df.index = pd.to_datetime(df.index)
+df = df.astype('bool')
 
 # GET TIME CLUSTERS
 
@@ -18,28 +20,29 @@ def get_den(data):
 
 def get_fclusters(data, max_dist):
         fcluster = hca.fcluster(hca.linkage(data), max_d, criterion='distance')
-        df = pd.DataFrame(columns = ['time','cluster'])
-        df['time'], df['cluster'] = data.index, fcluster
+        df = pd.DataFrame(columns = ['unit','cluster'])
+        df['unit'], df['cluster'] = data.index, fcluster
         return df
 
-max_d = 4
+max_d = 4.5
 cdf = get_fclusters(df, max_d)
 cdf.groupby('cluster')['cluster'].count()
 
 cdf.plot(kind='bar')
 
 # GET MOD CLUSTER
-get_den(df.T)
+mods = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/modxtime.csv', index_col=0)
+get_den(mods)
 
-max_d = 7
-cdf = get_fclusters(df.T, max_d)
+max_d = 6.5
+cdf = get_fclusters(mods, max_d)
 cdf.groupby('cluster')['cluster'].count()
 
+sns.clustermap(mods, col_cluster=False)
+
+cdf.set_index('unit', inplace=True)
+mods['CLUSTER'] = cdf['cluster']
+
+cdf.sort_values('cluster', inplace=True)
 cdf.plot(kind='bar')
 
-
-# removing infrequent mods
-mods = df.T.astype(int)
-sums = mods.sum(axis=1)
-nones = sums[sums == 0]
-mods = mods[~mods.index.isin(nones.index)]
