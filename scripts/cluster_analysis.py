@@ -9,17 +9,14 @@ import seaborn as sns
 import scipy.cluster.hierarchy as hca
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/andy_output.csv', index_col=0)
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod(10+days)_matrix.csv', index_col=0)
 df.index = pd.to_datetime(df.index)
 
 
 # GET TIME CLUSTERS
-
 def get_den(data):
         link = hca.linkage(data)
         return hca.dendrogram(link)
-    
-get_den(df)
 
 def get_fclusters(data, max_dist):
         fcluster = hca.fcluster(hca.linkage(data), max_d, criterion='distance')
@@ -27,6 +24,7 @@ def get_fclusters(data, max_dist):
         df['unit'], df['cluster'] = data.index, fcluster
         return df
 
+get_den(df)
 max_d = 3.5
 cdf = get_fclusters(df, max_d)
 cdf.groupby('cluster')['cluster'].count()

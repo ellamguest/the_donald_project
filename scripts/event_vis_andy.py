@@ -10,8 +10,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt 
 import scipy as sp
 
-df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv', index_col=0)
-ap = df[df['permissions']=='+all']
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_merged.csv', index_col=0)
+#df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv', index_col=0)
+#ap = df[df['permissions']=='+all']
 
 
 subset = (df[['name', 'date', 'pubdate']].copy()
@@ -47,6 +48,8 @@ for d in seen.index & not_seen.index:
     output[d] = current.copy()
 output = pd.concat(output, 1).T
 
+output.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod_matrix.csv')
+
 #GET SUBSET OF MODS PRESENT FOR AT LEAST 1 WHOLE WEEK?
 weeks = output.resample('W').last()
 s = weeks.sum()
@@ -54,9 +57,9 @@ s = s[s>0]
 weeks = weeks[s.index]
 
   
-cg = sns.clustermap(weeks, row_cluster=False)
+cg = sns.clustermap(weeks.T, row_cluster=False)
 #plt.yticks(rotation=0)
-plt.gcf().set_size_inches(24, 12)
+plt.gcf().set_size_inches(12, 24)
 
 
 
