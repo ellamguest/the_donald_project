@@ -38,8 +38,7 @@ for item in unique_urls:
     timestamps.append(timestamp)
     
 columns = {'snapshot' : urls, 'timestamp' : timestamps}
-snapshot_df = pd.DataFrame()
-snapshot_df.to_csv('the_donald_snapshots_list_2dec.csv')
+df = pd.DataFrame(columns)
 
 ##### CHECK PAGES ARCHIVED SUCCESSFULLY
 #df = pd.read_csv('the_donald_snapshots_list_2dec.csv', index_col=0)
@@ -72,10 +71,9 @@ df['success'] = mark_unsuccessful(urls) # 11 false
 df.to_csv('the_donald_snapshots_list_2dec.csv')
 
 ##### SCRAPE  + COMPILE MOD INFO
-df = pd.read_csv('the_donald_snapshots_list_2dec.csv', index_col=0)
+df = pd.read_csv('td_web_archive_snaplist_4jan.csv', index_col=0)
 possibles = df[df['success'] != False]
 urls = possibles.snapshot
-
 
 def scrape_mod_table(url): 
     '''pulls mod info from soup object of /about/moderators snapshot
@@ -110,12 +108,9 @@ mod_hist.to_csv('t_d_mod_hist.csv')
 mods = pd.read_csv('t_d_mod_hist.csv')
 mods.rename(columns={'Unnamed: 0':'rank'}, inplace=True)
 
+mods.to_csv('all_mods_web_archive.csv')
 
-# fixing karma string until rescrape not as tag!!!
-k = []
-for tag in mod_hist.postkarma:
-    k.append(str(tag)[3:-4])
-mod_hist['postkarma'] = k
+
 
 
 

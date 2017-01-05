@@ -16,15 +16,15 @@ r = requests.get(BEGIN_URL, headers=headers)
 soup = BeautifulSoup(r.text, "html5lib")
 
 
-links = soup.findAll(href=re.compile("https://archive.is/")) # 75 links. ~ 67 snapshots
+links = soup.findAll(href=re.compile("https://archive.is/"))
 urls = []
 for x in links:
     urls.append(x['href'])
 users = urls[5:-3]
  
 mod_info = compile_dfs(users)
+mod_info.rename(columns={'Unnamed: 0':'rank'}, inplace=True)
+mod_info.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv')
 
-df = pd.read_csv('all_mods_archive_it.csv')
-
-
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv', index_col=0)
  

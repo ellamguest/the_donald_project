@@ -62,11 +62,6 @@ def compile_dfs(urls):
     return pd.concat(dfs)
 
 
-
-
-
-
-
 def scrape_mod_table(url, dfs): 
     '''pulls mod info from soup object of /about/moderators snapshot
        dumps info into an empty dataframe (dfs) '''
