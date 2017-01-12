@@ -6,6 +6,7 @@ Created on Fri Jan  6 12:25:07 2017
 """
 import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 
 headers={'User-agent':'whyaskreddit bot 0.1'}
 
@@ -55,19 +56,36 @@ def get_revisions_df(url):
     df['time'] = pd.to_datetime(df['time'], unit='s')
     df = df.fillna(False)
     df['url'] = 'https://www.reddit.com/r/The_Donald/wiki/' + df['page'] + '.json?v=' + df['url_id']
+    df['content'] = df['url'].map(pull_page)
+    df['json'] = df.url.map(get_json)    
     return df
     
 def get_json(url):
     return url.split('?')[0] + '.json?' + url.split('?')[1]
     
-df['json'] = df.url.map(get_json)
-
 def pull_page(url):
     response = requests.get(url, headers=headers)
     data = response.json()
     return data
 
-df['content'] = df['url'].map(pull_page)
+def json_to_html(json):
+    data = json['data']['content_html']
+    soup = BeautifulSoup(data)
+    text = soup.get_text()
+    lines = (line.strip() for line in text.splitlines())
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    text = '\n'.join(chunk for chunk in chunks if chunk)
+    html = BeautifulSoup(text)
+    return html
+
+def tag_text(html, tagname):
+    text = []
+    for tag in html.findAll(tagname):
+        text.append(tag.text)
+    return text
+
+
+
 
 
 
