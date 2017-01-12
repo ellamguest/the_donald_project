@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod(10+days)_matrix.csv', index_col=0)
 df.index = pd.to_datetime(df.index)
+df = df.T
 
 
 # GET TIME CLUSTERS
@@ -32,6 +33,7 @@ cdf.groupby('cluster')['cluster'].count()
 cdf.plot(kind='bar')
 
 weeks = df.resample('W').mean()
+months = df.resample('m').sum()
 
 
 # GET MOD CLUSTER

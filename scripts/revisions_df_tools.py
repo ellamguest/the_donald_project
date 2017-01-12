@@ -54,8 +54,20 @@ def get_revisions_df(url):
         df.loc[i] = info
     df['time'] = pd.to_datetime(df['time'], unit='s')
     df = df.fillna(False)
-    df['url'] = 'https://www.reddit.com/r/The_Donald/wiki/' + df['page'] + '?v' + df['url_id']
+    df['url'] = 'https://www.reddit.com/r/The_Donald/wiki/' + df['page'] + '.json?v=' + df['url_id']
     return df
+    
+def get_json(url):
+    return url.split('?')[0] + '.json?' + url.split('?')[1]
+    
+df['json'] = df.url.map(get_json)
+
+def pull_page(url):
+    response = requests.get(url, headers=headers)
+    data = response.json()
+    return data
+
+df['content'] = df['url'].map(pull_page)
 
 
 
