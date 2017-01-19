@@ -68,21 +68,22 @@ def pull_page(url):
     data = response.json()
     return data
 
-def json_to_html(json):
-    data = json['data']['content_html']
-    soup = BeautifulSoup(data)
-    text = soup.get_text()
-    lines = (line.strip() for line in text.splitlines())
-    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-    text = '\n'.join(chunk for chunk in chunks if chunk)
-    html = BeautifulSoup(text)
-    return html
-
-def tag_text(html, tagname):
-    text = []
-    for tag in html.findAll(tagname):
-        text.append(tag.text)
-    return text
+#def json_to_html(json):
+#    soup = BeautifulSoup(data)
+#    data = json['data']['content_html']
+#    
+#    text = soup.get_text()
+#    lines = (line.strip() for line in text.splitlines())
+#    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+#    text = '\n'.join(chunk for chunk in chunks if chunk)
+#    html = BeautifulSoup(text)
+#    return html
+#
+#def tag_text(html, tagname):
+#    text = []
+#    for tag in html.findAll(tagname):
+#        text.append(tag.text)
+#    return text
 
 
 

@@ -32,13 +32,13 @@ df = load_sidebar_revisions()
 
 # BREAKING TEXT DOWN BY TAG
 
-def content_df():
-    load_sidebar_revisions()
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/sidebar_revisions.csv', index_col=0)
+def content_df(df):
     content_df = df[['time','content']].head()
     content_df['html'] = content_df['content'].apply(json_to_html)
     return content_df
 
-cdf = content_df()
+content_df(subset1)
 
 def tag_breakdown(df):
     d = {'headers':'h3', 'blockquotes':'blockquote','links':'a','lists':'ul'}
