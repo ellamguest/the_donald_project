@@ -11,16 +11,19 @@ from bs4 import BeautifulSoup
 headers={'User-agent':'whyaskreddit bot 0.1'}
 
 def pull_page(url):
+    '''creates a json object from the url'''
     response = requests.get(url, headers=headers)
     data = response.json()
     return data
 
 def get_after(url):
+    '''find the id of the next page'''
     data = pull_page(url)
     after = data['data']['after']
     return after
 
 def after_pages(url):
+    '''gets the list of all historics pages'''
     urls = [url]
     after = get_after(url)
     while after != None:
@@ -30,6 +33,7 @@ def after_pages(url):
     return urls
 
 def get_revisions_df(url):
+    '''compiles data on revisions across all pages'''
     revisions = pull_page(url)
     columns=['time','reason','page','url_id','author','created_utc','hidden','l_karma','c_karma','gold','mod','email']
     df = pd.DataFrame(columns=columns)
@@ -55,35 +59,40 @@ def get_revisions_df(url):
         df.loc[i] = info
     df['time'] = pd.to_datetime(df['time'], unit='s')
     df = df.fillna(False)
-    df['url'] = 'https://www.reddit.com/r/The_Donald/wiki/' + df['page'] + '.json?v=' + df['url_id']
-    df['content'] = df['url'].map(pull_page)
-    df['json'] = df.url.map(get_json)    
+    df['url'] = 'https://www.reddit.com/r/The_Donald/wiki/' + df['page'] + '.json?v=' + df['url_id']   
     return df
-    
-def get_json(url):
-    return url.split('?')[0] + '.json?' + url.split('?')[1]
-    
-def pull_page(url):
-    response = requests.get(url, headers=headers)
-    data = response.json()
-    return data
 
-#def json_to_html(json):
-#    soup = BeautifulSoup(data)
-#    data = json['data']['content_html']
-#    
-#    text = soup.get_text()
-#    lines = (line.strip() for line in text.splitlines())
-#    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-#    text = '\n'.join(chunk for chunk in chunks if chunk)
-#    html = BeautifulSoup(text)
-#    return html
-#
-#def tag_text(html, tagname):
-#    text = []
-#    for tag in html.findAll(tagname):
-#        text.append(tag.text)
-#    return text
+
+def json_to_html(json):
+    '''must check json is in dict format, not string
+     pandas converts to string when stored'''
+    data = json['data']['content_html']
+    soup = BeautifulSoup(data)
+    text = soup.get_text()
+    lines = (line.strip() for line in text.splitlines())
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    text = '\n'.join(chunk for chunk in chunks if chunk)
+    html = BeautifulSoup(text)
+    return html
+
+
+# BREAKING TEXT DOWN BY TAG
+
+def tag_text(soup, tagname):
+    '''input soup object, find all texts under that tag'''
+    text = []
+    for tag in soup.findAll(tagname):
+        text.append(tag.text)
+    return text
+    
+
+def tag_breakdown(df):
+    '''df must have column ['html'] of soup objects
+    creates additional columns for each tag component'''
+    d = {'headers':'h3', 'blockquotes':'blockquote','links':'a','lists':'ul'}
+    for key,value in d.iteritems():
+        df[key] = df['html'].apply(lambda x: tag_text(x,value))
+    return df
 
 
 

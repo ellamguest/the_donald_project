@@ -8,6 +8,7 @@ Created on Tue Jan 17 16:40:43 2017
 import pandas as pd
 import datetime
 from sidebar_revisions import content_df
+from revisions_df_tools import pull_page
 
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/sidebar_revisions.csv', index_col=0)
@@ -36,5 +37,6 @@ last = cdf.groupby('cluster').last()['unit']
 #contentdf = content_df()
 
 subset1 = df[(df.index >= first[1]) & (df.index <= last[1])]
+subset1 = subset1[['content','author']]
 
 
