@@ -27,6 +27,8 @@ def load_sidebar_revisions():
     df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/sidebar_revisions.csv', index_col=0)
     return df
 
+df = load_sidebar_revisions()
+
 
 # BREAKING TEXT DOWN BY TAG
 

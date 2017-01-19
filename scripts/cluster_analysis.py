@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod(10+days)_matrix.csv', index_col=0)
 df.index = pd.to_datetime(df.index)
-df = df.T
+#df = df.T
 
 
 # GET TIME CLUSTERS
@@ -25,9 +25,9 @@ def get_fclusters(data, max_dist):
         df['unit'], df['cluster'] = data.index, fcluster
         return df
 
-get_den(df)
-max_d = 3.5
-cdf = get_fclusters(df, max_d)
+get_den(weeks)
+max_d = 3
+cdf = get_fclusters(weeks, max_d)
 cdf.groupby('cluster')['cluster'].count()
 
 cdf.plot(kind='bar')
@@ -52,8 +52,8 @@ cdf.set_index('unit', inplace=True)
 mods['CLUSTER'] = cdf['cluster']
 mods.sort_values('CLUSTER',inplace=True)
 
-sns.clustermap(mods, col_cluster=False)
-sns.clustermap(mods, row_cluster=False)
+sns.clustermap(mods, col_cluster=False) #dates
+sns.clustermap(mods, row_cluster=False) #mods
 
 #CLUSTERMAP OF TIMES W/ MODS ORGANISED BY CLUSTER
 cg = sns.clustermap(mods, col_cluster=False)
