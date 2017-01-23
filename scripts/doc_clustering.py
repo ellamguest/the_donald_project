@@ -8,17 +8,14 @@ Created on Thu Jan 19 18:01:01 2017
 import numpy as np
 import pandas as pd
 import nltk
-import re
-import os
-import codecs
 from sklearn import feature_extraction, externals, cluster, metrics, manifold
-import mpld3
 from revisions_df_tools import pull_page, json_to_html
 from __future__ import print_function
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import seaborn as sns
 import scipy.cluster.hierarchy as hca
+from gensim import corpora, models, similarities 
+
 
 sns.set_style('white')
 
@@ -26,16 +23,11 @@ sns.set_style('white')
 ##############################################################################
 
 ''' PREPPING DATA '''
-sidebar_revisions = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/sidebar_revisions.csv', index_col=0)
-sidebar_revisions.index = pd.to_datetime(sidebar_revisions.index)
-sidebar_revisions = sidebar_revisions[sidebar_revisions['author'] != 'False']
+df = pd.read_pickle('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/sidebar_revisions.pkl')
+df = df[df['author'] != 'False']
 
-sample = sidebar_revisions[['author','url']].sample(50)
-sample['json'] = sample['url'].map(pull_page)
-sample['html'] = sample['json'].map(json_to_html)
+sample = df.sample(300)
 
-times = sample.index
-names = sample['author']
 texts = [text.get_text() for text in sample['html']]
 
 ##############################################################################
@@ -79,7 +71,8 @@ for i in texts:
 
 # create a vocab df with index = stems and columns = all matching tokens
 vocab_frame = pd.DataFrame({'words': totalvocab_tokenized}, index = totalvocab_stemmed)
-#print('there are ' + str(vocab_frame.shape[0]) + ' items in vocab_frame')
+
+print('there are ' + str(vocab_frame.shape[0]) + ' items in vocab_frame')
 
 ##############################################################################
 ##############################################################################
@@ -102,11 +95,7 @@ tfidf_vectorizer = feature_extraction.text.TfidfVectorizer(max_df=0.8, max_featu
                                  use_idf=True, tokenizer=tokenize_and_stem, ngram_range=(1,3))
 
 tfidf_matrix = tfidf_vectorizer.fit_transform(texts) #fit the vectorizer to sidebar revisions
-
-print(tfidf_matrix.shape)
-
-# terms is just a list of the features used in the tf-idf matrix. This is a vocabulary
-terms = tfidf_vectorizer.get_feature_names()
+terms = tfidf_vectorizer.get_feature_names() #a list of the features used in the tf-idf matrix
 
 '''dist is defined as 1 - the cosine similarity of each document.
 Cosine similarity is measured against the tf-idf matrix and can be used to
@@ -146,55 +135,54 @@ def plot_dendrogram(dist):
 
 plot_dendrogram(dist)
 
-num_clusters = input('How many clusters would you like?')
+##############################################################################
+##############################################################################
+
+num_clusters = input('How many clusters would you like?    ') # check dendrogram
 
 ##############################################################################
 ##############################################################################
 
 #### K-means clustering ####
+#num_clusters = len(sample['author'].unique()) # set number of clusters to number of unique authors
 
-#num_clusters = 4 # len(sample['author'].unique()) # set number of clusters to number of unique authors
 km = cluster.KMeans(n_clusters=num_clusters)
 km.fit(tfidf_matrix)
-
-#joblib.dump(km,  'doc_cluster.pkl')
-#km = externals.joblib.load('doc_cluster.pkl')
-
-clusters = km.labels_.tolist()
+clusters = km.labels_.tolist() # list of clusters
 
 # create doc attribute df including cluster assignment
-revs = { 'time': sample.index, 'author': sample['author'].tolist(), 'text': texts, 'cluster': clusters}
-
-frame = pd.DataFrame(revs, index = [clusters] , columns = ['time', 'author', 'cluster', 'text'])
+revisions = { 'time': sample.index, 'author': sample['author'].tolist(), 'text': texts, 'cluster': clusters}
+frame = pd.DataFrame(revisions, index = [clusters] , columns = ['time', 'author', 'cluster', 'text'])
 
 print('Cluster value counts:')
 frame['cluster'].value_counts()
+print()
 
 ### identify n words most identified with each cluster, gives sense of cluster topic
-
-print("Top terms per cluster:")
-print()
-#sort cluster centers by proximity to centroid
-order_centroids = km.cluster_centers_.argsort()[:, ::-1] 
-
-for i in range(num_clusters):
-    print("Cluster %d words:" % i, end='')
+def list_cluster_words():
+    print("Top terms per cluster:")
+    print()
+    #sort cluster centers by proximity to centroid
+    order_centroids = km.cluster_centers_.argsort()[:, ::-1] 
     
-    for ind in order_centroids[i, :5]: # set num words to get
-        print(' %s' % vocab_frame.ix[terms[ind].split(' ')].values.tolist()[0][0].encode('utf-8', 'ignore'), end=',')
-    print() #add whitespace
-    print() #add whitespace
-    
-    print("Cluster %d authors:" % i, end='')
-    if type(frame.ix[i]['author']) == str:
-        print(frame.ix[i]['author'])
-    else:
-        for author in set(frame.ix[i]['author']):
-            print(' %s,' % author, end='')
-    print() #add whitespace
-    print() #add whitespace
+    for i in range(num_clusters):
+        print("Cluster %d words:" % i, end='')
+        
+        for ind in order_centroids[i, :10]: # set num words to get
+            print(' %s' % vocab_frame.ix[terms[ind].split(' ')].values.tolist()[0][0].encode('utf-8', 'ignore'), end=',')
+        print() #add whitespace
+        print() #add whitespace
+        
+        print("Cluster %d authors:" % i, end='')
+        if type(frame.ix[i]['author']) == str:
+            print(frame.ix[i]['author'])
+        else:
+            for author in set(frame.ix[i]['author']):
+                print(' %s,' % author, end='')
+        print() #add whitespace
+        print() #add whitespace
 
-
+list_cluster_words()
 
 ##############################################################################
 ##############################################################################
@@ -218,10 +206,7 @@ xs, ys = pos[:, 0], pos[:, 1]
 
 '''VISUALISING DOCUMENT CLUSTERS - K-MEANS'''
 
-## get cluster attributes
-#cluster_colors = {0: '#1b9e77', 1: '#d95f02', 2: '#7570b3', 3: '#e7298a', 4: '#66a61e', 5: '#3364FF', 6: '#3364FF'}
-colors = sns.color_palette('viridis', num_clusters)          
-          
+colors = sns.color_palette('viridis', num_clusters)                  
 cluster_names = {}
 # cannibalizing code above to get list of highest ranking words per cluster
 for i in range(num_clusters):
@@ -230,36 +215,37 @@ for i in range(num_clusters):
         names.append(vocab_frame.ix[terms[ind].split(' ')].values.tolist()[0][0].encode('utf-8', 'ignore'))
     cluster_names[i] = names
     
-df = pd.DataFrame(dict(x=xs, y=ys, label=clusters, title=sample.index.strftime('%m/%d'))) #results of the MDS plus the cluster numbers and titles
+node_attrs = pd.DataFrame(dict(x=xs, y=ys, label=clusters, date=sample.index.strftime('%m/%Y'), author=sample['author'])) #results of the MDS plus the cluster numbers and titles
                                                     #or title = sample['author']
-groups = df.groupby('label') #group by cluster
-
+groups = node_attrs.groupby('label') #group by cluster
 
 ## plot figure
-fig, ax = plt.subplots(figsize=(11, 6)) # set size
-for name, group in groups:
-    ax.plot(group.x, group.y, marker='o', linestyle='', ms=12, 
-            label=cluster_names[name], color=colors[name-1], 
-            mec='none')
-    ax.set_aspect('auto')
-    ax.tick_params(\
-        axis= 'x',          # changes apply to the x-axis
-        which='both',      # both major and minor ticks are affected
-        bottom='off',      # ticks along the bottom edge are off
-        top='off',         # ticks along the top edge are off
-        labelbottom='off')
-    ax.tick_params(\
-        axis= 'y',         # changes apply to the y-axis
-        which='both',      # both major and minor ticks are affected
-        left='off',      # ticks along the bottom edge are off
-        top='off',         # ticks along the top edge are off
-        labelleft='off')
-    
-ax.legend(numpoints=1, loc=0)  #show legend with only 1 point
-for i in range(len(df)): #add label in x,y position with the label as the author name
-    ax.text(df.ix[i]['x'], df.ix[i]['y'], df.ix[i]['title'], size=8)  
-
-#plt.savefig('clusters_small_noaxes.png', dpi=200)
+def plot_clusters():
+    fig, ax = plt.subplots(figsize=(9, 6)) # set size
+    for name, group in groups:
+        ax.plot(group.x, group.y, marker='o', linestyle='', ms=12, 
+                label=cluster_names[name], color=colors[name], 
+                mec='none', alpha = 0.5)
+        ax.set_aspect('auto')
+        ax.tick_params(\
+            axis= 'x',          # changes apply to the x-axis
+            which='both',      # both major and minor ticks are affected
+            bottom='off',      # ticks along the bottom edge are off
+            top='off',         # ticks along the top edge are off
+            labelbottom='off')
+        ax.tick_params(\
+            axis= 'y',         # changes apply to the y-axis
+            which='both',      # both major and minor ticks are affected
+            left='off',      # ticks along the bottom edge are off
+            top='off',         # ticks along the top edge are off
+            labelleft='off')
+        
+    ax.legend(numpoints=1, loc=0)  #show legend with only 1 point
+    for i in range(len(node_attrs)): #add label in x,y position with the label as the author name
+       ax.text(node_attrs.ix[i]['x'], node_attrs.ix[i]['y'], node_attrs.ix[i]['date'],
+               size=10, rotation = 75, weight='semibold')  
+            
+plot_clusters()
 
 
 ##############################################################################
@@ -271,20 +257,16 @@ topics and that each word in the document is attributable to the document's topi
 EXAMPLE REMOVED PROPER NOUNS, I HAVE NOT
 '''
 
-from gensim import corpora, models, similarities 
-
-
 '''text is a list of sidebar revisions returns from prep_texts'''
-tokenized_text = [tokenize_and_stem(text) for text in texts] #tokenize
+#tokenized_text = [tokenize_and_stem(text) for text in texts] #tokenize
+tokenized_text = [tokenize_only(text) for text in texts] #tokenize
 stopless_texts = [[word for word in text if word not in stopwords] for text in tokenized_text] #remove stop words
 dictionary = corpora.Dictionary(stopless_texts) #create a Gensim dictionary from the texts
 dictionary.filter_extremes(no_below=1, no_above=0.8) #remove extremes (similar to the min/max df step used when creating the tf-idf matrix)
 corpus = [dictionary.doc2bow(text) for text in stopless_texts] #convert the dictionary to a bag of words corpus for reference
 
-# run the model
-%time lda = models.LdaModel(corpus, num_topics=5, id2word=dictionary, update_every=5, chunksize=10000, passes=100)
-
-
+# run the model, set number of topics
+%time lda = models.LdaModel(corpus, num_topics=3, id2word=dictionary, update_every=5, chunksize=10000, passes=100)
 
 # convert the topics into just a list of the top 20 words in each topic
 topics_matrix = lda.show_topics(formatted=False, num_words=20)
@@ -299,22 +281,3 @@ for n in range(len(topics_matrix)):
 
 ##############################################################################
 ##############################################################################
-'''RUN SECTIONS'''
-
-
-
-
-pickle_dump_kmeans()
-
-km = joblib.load('doc_cluster.pkl')
-clusters = km.labels_.tolist()
-
-kmeans_plot() # must have called order_centroids from?
-
-
-
-hca_plot(dist)
-
-lda = lda(texts)
-lda.show_topics()
-lda_topic_list.lda()
