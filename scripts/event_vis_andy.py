@@ -10,7 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt 
 import scipy as sp
 
-df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_merged.csv', index_col=0)
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_merged.csv', index_col=1)
 #df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv', index_col=0)
 #ap = df[df['permissions']=='+all']
 
@@ -49,6 +49,9 @@ for d in seen.index & not_seen.index:
 output = pd.concat(output, 1).T
 
 output.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod_matrix.csv')
+
+output = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod_matrix.csv', index_col=0)
+output.index = pd.to_datetime(output.index)
 
 #GET SUBSET OF MODS PRESENT FOR AT LEAST 1 WHOLE WEEK?
 weeks = output.resample('W').last()

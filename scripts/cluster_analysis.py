@@ -32,7 +32,7 @@ cdf.groupby('cluster')['cluster'].count()
 
 cdf.plot(kind='bar')
 
-weeks = df.resample('W').mean()
+weeks = output.resample('W').mean()
 months = df.resample('m').sum()
 
 
@@ -56,9 +56,16 @@ sns.clustermap(mods, col_cluster=False) #dates
 sns.clustermap(mods, row_cluster=False) #mods
 
 #CLUSTERMAP OF TIMES W/ MODS ORGANISED BY CLUSTER
-cg = sns.clustermap(mods, col_cluster=False)
-cg.ax
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod(10+days)_matrix.csv', index_col=0)
+df.index = pd.to_datetime(df.index)
+mods = df.resample('W').mean().T
+mods.columns = mods.columns.date
+
+cg = sns.clustermap(mods, col_cluster=False , figsize=(9,13))
 plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
-plt.gcf().set_size_inches(10, 15)
+cg.ax_heatmap.set_title('Timeline of Moderator Presence', fontsize=20)
+cg.ax_heatmap.set_ylabel('Moderator', fontsize=15)
+cg.ax_heatmap.set_xlabel('Date (in weeks)', fontsize=15)
+
 
 

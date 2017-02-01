@@ -8,6 +8,7 @@ Created on Thu Jan 19 18:01:01 2017
 import numpy as np
 import pandas as pd
 import nltk
+import re
 from sklearn import feature_extraction, externals, cluster, metrics, manifold
 from revisions_df_tools import pull_page, json_to_html
 from __future__ import print_function
@@ -121,7 +122,7 @@ def plot_dendrogram(dist):
     '''dist is a distance matrix created from the tf-idf'''
     linkage_matrix = hca.linkage(dist, method='ward') #using distance matrix fro tfidf
     
-    fig, ax = plt.subplots(figsize=(6, 9)) # set size
+    fig, ax = plt.subplots(figsize=(6, 25)) # set size
     ax = hca.dendrogram(linkage_matrix, orientation='right', labels=sample.index.strftime('%Y-%m-%d'));
     
     plt.tick_params(\
