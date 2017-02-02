@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod(10+days)_matrix.csv', index_col=0)
 df.index = pd.to_datetime(df.index)
-#df = df.T
+weeks = df.resample('W').mean()
 
 
-# GET TIME CLUSTERS
+# GET TIME PERIOD CLUSTERS
 def get_den(data):
         link = hca.linkage(data)
         return hca.dendrogram(link)
@@ -28,32 +28,16 @@ def get_fclusters(data, max_dist):
 get_den(weeks)
 max_d = 3
 cdf = get_fclusters(weeks, max_d)
+cdf.set_index('unit', drop=True, inplace=True)
+del cdf.index.name
+
 cdf.groupby('cluster')['cluster'].count()
 
-cdf.plot(kind='bar')
+cdf.plot(kind='bar', x=weeks.index.date)
 
-weeks = output.resample('W').mean()
-months = df.resample('m').sum()
+cdf.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/time_clusters.csv')
 
 
-# GET MOD CLUSTER
-#mods = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/modxtime.csv', index_col=0)
-mods = df.resample('W').mean().T
-get_den(mods)
-
-max_d = 2.3
-cdf = get_fclusters(mods, max_d)
-cdf.groupby('cluster')['cluster'].count()
-
-cdf.sort_values('cluster', inplace=True)
-cdf.plot(kind='bar')
-
-cdf.set_index('unit', inplace=True)
-mods['CLUSTER'] = cdf['cluster']
-mods.sort_values('CLUSTER',inplace=True)
-
-sns.clustermap(mods, col_cluster=False) #dates
-sns.clustermap(mods, row_cluster=False) #mods
 
 #CLUSTERMAP OF TIMES W/ MODS ORGANISED BY CLUSTER
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_mod(10+days)_matrix.csv', index_col=0)
