@@ -69,12 +69,15 @@ def get_top_posts(soup):
     top_posts = pd.DataFrame(data = {'title':titles,'date':dt,'url':urls,'author':author,'score':score, 'start':start})
     return top_posts
     
-
-
 dfs = []
 for i in periods.index:
     soup = make_soup(periods['url'][i])
     df = get_top_posts(soup)
     dfs.append(df)
+    
+top_posts = pd.concat(dfs)
+top_posts.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', encoding='utf-8')
+
+top_posts = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', index_col=0)
     
 
