@@ -50,13 +50,11 @@ from scraping_functions import *
 
 def make_soup(url):
     headers = {'user-agent': 'why_ask_reddit 1.0'}
-    r = requests.get(test, headers=headers)
+    r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.text, "html5lib")
     return soup
 
-soup = make_soup(test)
-
-def get_top_posts(soup):
+def get_top_posts(soup, i):
     '''soup is a BeautifulSoup object'''
     headers = soup.findAll("header", { "class" : "search-result-header" })
     titles = [x.a.text for x in headers]
@@ -65,19 +63,24 @@ def get_top_posts(soup):
     dt = [x.time['datetime'] for x in tags]
     author = [x.find_all('span', {'class':'search-author'})[0].a['href'] for x in tags]
     score = [x.find('span', {'class':'search-score'}).text[:-7] for x in tags]
-    start = periods['begins'][0]    
+    start = periods['begins'][i]    
     top_posts = pd.DataFrame(data = {'title':titles,'date':dt,'url':urls,'author':author,'score':score, 'start':start})
     return top_posts
     
 dfs = []
 for i in periods.index:
     soup = make_soup(periods['url'][i])
-    df = get_top_posts(soup)
+    df = get_top_posts(soup, i)
     dfs.append(df)
     
 top_posts = pd.concat(dfs)
+top_posts.columns = ['rank', u'author', u'date', u'score', u'start', u'title', u'url']
+top_posts['post_id'] = top_posts['url'].map(lambda x: x.split('/')[6])
 top_posts.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', encoding='utf-8')
 
-top_posts = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', index_col=0)
+top_posts = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', thousands=',', index_col=0)
+
+
+x = top_posts[['score','start','title']].sort_values('score', ascending= False)
     
 
