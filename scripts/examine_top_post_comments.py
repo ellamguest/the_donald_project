@@ -7,6 +7,7 @@ Created on Mon Feb  6 18:17:21 2017
 import pandas as pd
 
 df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/all_comments_top_posts.csv', index_col=0)
+top_posts = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', thousands=',', index_col=0)
 
 useful = ['subreddit_id', 'link_id', 'replies', 'id', 'gilded', 'archived', 
 'author', 'parent_id', 'score', 'controversiality', 'body', 'edited',
@@ -17,3 +18,12 @@ df = df[useful]
 
 stickies = df[df['stickied']==True]
 stickies[['body', 'score','date','author']]
+
+c = df.groupby('author')['author'].count()
+n = c[c>2]
+n.value_counts()
+names = n.index
+
+repeats = df[df['author'].isin(names)]
+
+mods = df[df['distinguished']=='moderator']
