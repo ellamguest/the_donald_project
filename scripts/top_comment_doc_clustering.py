@@ -6,13 +6,8 @@ Created on Thu Feb  9 10:20:22 2017
 """
 
 import pandas as pd
-import nltk
 import re
-from doc_clustering import tokenize_and_stem
-import string
-from sklearn import feature_extraction, externals, cluster, metrics, manifold
-import matplotlib.pyplot as plt
-import scipy.cluster.hierarchy as hca
+#import string
 
 # IMPORT AND PREP DATA FRAMES
 posts = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', thousands=',', index_col=0)
@@ -24,38 +19,85 @@ comments = pd.read_pickle('/Users/emg/Programmming/GitHub/the_donald_project/tid
 comments = comments[attrs]
 comments['date'] = pd.to_datetime(comments['created'], unit='s')
 comments['post_id']=comments['link_id'].str[3:]
-comments['body'] = comments['body'].str.encode('utf-8')
+
 
 # TIDY DATA INTO DOCUMENTS
-d = {}
-for post in posts.index:
-    d[post] = [posts['title'].loc[post]]
-
-for comment in comments.index:
-    d[comments['post_id'].loc[comment]].append(comments['body'].loc[comment])
-
-for key, value in d.iteritems():
-    d[key] = ''.join(value).decode('utf-8')
-
-docs_key = []
-for key,value in d.iteritems():
-    text = ''.join(value).decode('utf-8')
-    t = key, text
-    docs_key.append(t)
-    
 docs = []
-for doc in docs_key:
-    docs.append(doc[1])
+for post_id in posts.index:
+    body = list(comments[comments['post_id']==post_id]['body'])
+    body.insert(0, posts['title'].loc[post_id])
+    doc = ' '.join(body)
+    docs.append(re.sub(r'[^\w\s]','',doc))
 
-    
 
+####### GENSIM
+# VECTORISE
+from gensim import corpora
+from gensim.parsing.preprocessing import STOPWORDS
+
+def tokenize(text):
+    return [token for token in text.lower().split() if token not in STOPWORDS]
+
+texts = [tokenize(text) for text in docs]
+
+dictionary = corpora.Dictionary(texts)
+dict_map = dictionary.token2id
+
+corpus = [dictionary.doc2bow(text) for text in texts]
+corpora.MmCorpus.serialize('/tmp/corpus.mm', corpus)
+
+#TRANSFORMATION INTERFACE
+import logging
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
+from gensim import corpora, models, similarities
+
+corpus = corpora.MmCorpus('/tmp/corpus.mm')
+
+tfidf = models.TfidfModel(corpus) # step 1 -- initialize a model
+corpus_tfidf = tfidf[corpus]
+
+lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=2) # initialize an LSI transformation
+corpus_lsi = lsi[corpus_tfidf] # create a double wrapper over the original corpus: bow->tfidf->fold-in-lsi
+
+doc = 'Hillary Clinton is crooked'
+vec_bow = dictionary.doc2bow(doc.lower().split())
+vec_lsi = lsi[vec_bow] # convert the query to LSI space
+print(vec_lsi)
+
+lsi.print_topics(20, 4)
+
+for doc in corpus_lsi: # both bow->tfidf and tfidf->lsi transformations are actually executed here, on the fly
+    print(doc)
+
+
+index = similarities.MatrixSimilarity(lsi[corpus])
+sims = index[vec_lsi]
+print(list(enumerate(sims)))
+
+
+#### SCIKIT-LEARN
+import numpy as np  # a conventional alias
+import sklearn.feature_extraction.text as text
+
+vectorizer = text.CountVectorizer(input='content', stop_words='english', min_df=20)
+
+dtm = vectorizer.fit_transform(docs).toarray()
+vocab = np.array(vectorizer.get_feature_names())
+
+from sklearn import decomposition
+num_topics = 20
+num_top_words = 20
+clf = decomposition.LatentDirichletAllocation(n_components=num_topics, random_state=1)
+
+
+   
+###### NLTK OLD CODE
 # PERFORM CLUSTERING ANALYSIS
-stopwords = nltk.corpus.stopwords.words('english')
-stemmer = nltk.stem.snowball.SnowballStemmer("english")
-
 raw = docs[0]
-raw = raw.encode('utf-8').lower()
-tokens = nltk.word_tokenize(raw.decode('utf-8'))
+tokens = nltk.word_tokenize(raw.lower())
+
+stopwords = nltk.corpus.stopwords.words('english')
 filtered_tokens = [token for token in tokens if token not in stopwords]
 filtered_words = [word for word in filtered_tokens if word not in string.punctuation]
 
@@ -63,10 +105,13 @@ text = nltk.Text(filtered_words)
 text.collocations()
 
 nltk_df = pd.DataFrame(data={'post':d.keys(), 'body':d.values()})
-nltk_df['body'] = nltk_df['body'].str.decode('utf-8')
+#nltk_df['body'] = nltk_df['body'].str.decode('utf-8')
 nltk_df['tokens'] = nltk_df['body'].map(lambda x: nltk.word_tokenize(x))
-nltk_df['filtered_tokens'] = nltk_df['tokens'].map(lambda x: [token for token in x if token not in stopwords])
-nltk_df['filtered_words'] = nltk_df['filtered_tokens'].map(lambda x: ' '.join([word for word in x if word not in string.punctuation]))
+nltk_df['filtered_tokens'] = nltk_df['tokens'].map(lambda x: [t for t in x if t not in stopwords])
+
+wnl = nltk.WordNetLemmatizer()
+nltk_df['lemma_words'] = nltk_df['filtered_tokens'].map(lambda x: [wnl.lemmatize(t) for t in x])
+nltk_df['filtered_words'] = nltk_df['lemma_words'].map(lambda x: ' '.join([w for w in x if w not in string.punctuation]))
 
 texts = list(nltk_df['filtered_words'])
 
@@ -79,19 +124,16 @@ terms = tfidf_vectorizer.get_feature_names()
 
 dist = 1 - metrics.pairwise.cosine_similarity(tfidf_matrix)
 
-def plot_dendrogram(dist):
-    '''dist is a distance matrix created from the tf-idf'''
-    linkage_matrix = hca.linkage(dist, method='ward') #using distance matrix fro tfidf
-    
-    fig, ax = plt.subplots(figsize=(6, 25)) # set size
-    ax = hca.dendrogram(linkage_matrix, orientation='right', labels=posts['date'])
-    plt.tick_params(\
-        axis= 'x',          # changes apply to the x-axis
-        which='both',      # both major and minor ticks are affected
-        bottom='off',      # ticks along the bottom edge are off
-        top='off',         # ticks along the top edge are off
-        labelbottom='off')
-    
-    plt.tight_layout() #show plot with tight layout
+km = cluster.KMeans(n_clusters=4)
+km.fit(tfidf_matrix)
+clusters = km.labels_.tolist() # list of clusters
 
-plot_dendrogram(dist)
+nltk_df['clusters'] = clusters
+nltk_df['date'] = posts['date']
+nltk_df.index = nltk_df['post']
+
+c = nltk_df[['clusters','date', 'filtered_words']].sort(['clusters','date'])
+zero = c[c['clusters']==0]
+one = c[c['clusters']==1]
+two = c[c['clusters']==2]
+three = c[c['clusters']==3]
