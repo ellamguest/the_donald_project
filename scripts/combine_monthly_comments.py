@@ -42,14 +42,17 @@ pd.to_pickle(all_comments, '/Users/emg/Programmming/GitHub/the_donald_project/ti
 
 all_comments = pd.read_pickle('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/all_td_comments')
 all_comments = all_comments[['body','created_utc']]
+all_comments['body'].replace(regex=True,inplace=True,to_replace=r'[^\w\s]',value=r'')
 all_comments['date'] = pd.to_datetime(all_comments['created_utc'], unit='s')
+all_comments.index = all_comments['date'].dt.normalize()
 all_comments.sort_values('date', inplace=True)
-grouped_comments = all_comments.groupby(all_comments.date.dt.week)
 
+day_docs = [' '.join(list(all_comments.loc[x]['body']) for x in all_comments.index] # should be 551 unique days
+pickle.dump(day_docs, open('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/day_docs.p','wb'))   
 
 ##### CREATE CORPUS, TFIDF, AND LSI
 # re-run top_comment_doc_clustering.py if needed
-from gensim import corpora, models, similarities
+from gensim import corpora, models
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -89,18 +92,18 @@ def most_freq_tokens(doc, num_tokens):
 
 most_freq_tokens(periods[1],15)
 
-
-
-
-
-vec_lsi = lsi[vec_bow] # convert the query to LSI space
-doc_sim = sorted(vec_lsi, key=lambda x: x[1], reverse=True)    
-
-month_sim = []
-for x in doc_sim:
-    month_sim.append('{} : {}'.format(month_dict[x[0]], x[1]))
-month_sim        
-                         
+def get_doc_similarity(doc):
+    '''check how similar doc is to all docs in the corpora,
+        using latent semantic indexin (lsi)'''
+    vec_bow = dictionary.doc2bow(doc.lower().split())
+    vec_lsi = lsi[vec_bow] # convert the query to LSI space
+    doc_sim = sorted(vec_lsi, key=lambda x: x[1], reverse=True)    
+    month_sim = []
+    for x in doc_sim:
+        month_sim.append('{} : {}'.format(month_dict[x[0]], x[1]))
+    return month_sim     
+   
+get_doc_similarity(doc)                         
                          
 
 
