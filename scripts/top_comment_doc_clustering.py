@@ -7,7 +7,7 @@ Created on Thu Feb  9 10:20:22 2017
 
 import pandas as pd
 import re
-#import string
+import pickle
 
 # IMPORT AND PREP DATA FRAMES
 posts = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/period_top_posts.csv', thousands=',', index_col=0)
@@ -29,22 +29,28 @@ for post_id in posts.index:
     doc = ' '.join(body)
     docs.append(re.sub(r'[^\w\s]','',doc))
 
+period1 = ' '.join(docs[0:25])
+period2 = ' '.join(docs[25:50])
+period3 = ' '.join(docs[50:75])
+period4 = ' '.join(docs[75:100])
+
+periods = [period1, period2, period3, period4]
+pickle.dump(periods, open('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/comment_periods.p','wb'))
+
 
 ####### GENSIM
 # VECTORISE
 from gensim import corpora
 from gensim.parsing.preprocessing import STOPWORDS
 
-def tokenize(text):
-    return [token for token in text.lower().split() if token not in STOPWORDS]
-
-texts = [tokenize(text) for text in docs]
+texts = [[word for word in document.lower().split() if word not in STOPWORDS]
+        for document in docs]
 
 dictionary = corpora.Dictionary(texts)
-dict_map = dictionary.token2id
+dictionary.save('/tmp/td_dictionary.dict')
 
 corpus = [dictionary.doc2bow(text) for text in texts]
-corpora.MmCorpus.serialize('/tmp/corpus.mm', corpus)
+corpora.MmCorpus.serialize('/tmp/td_corpus.mm', corpus)
 
 #TRANSFORMATION INTERFACE
 import logging
@@ -52,20 +58,19 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 from gensim import corpora, models, similarities
 
-corpus = corpora.MmCorpus('/tmp/corpus.mm')
-
 tfidf = models.TfidfModel(corpus) # step 1 -- initialize a model
 corpus_tfidf = tfidf[corpus]
 
-lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=2) # initialize an LSI transformation
+lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=100) # initialize an LSI transformation
 corpus_lsi = lsi[corpus_tfidf] # create a double wrapper over the original corpus: bow->tfidf->fold-in-lsi
 
-doc = 'Hillary Clinton is crooked'
+doc = periods[1]
 vec_bow = dictionary.doc2bow(doc.lower().split())
 vec_lsi = lsi[vec_bow] # convert the query to LSI space
-print(vec_lsi)
 
-lsi.print_topics(20, 4)
+sorted(vec_lsi, key=lambda x: x[1], reverse=True)
+
+lsi.print_topics(4, 4)
 
 for doc in corpus_lsi: # both bow->tfidf and tfidf->lsi transformations are actually executed here, on the fly
     print(doc)
@@ -80,15 +85,15 @@ print(list(enumerate(sims)))
 import numpy as np  # a conventional alias
 import sklearn.feature_extraction.text as text
 
-vectorizer = text.CountVectorizer(input='content', stop_words='english', min_df=20)
+vectorizer = text.CountVectorizer(input='content', stop_words='english')
 
-dtm = vectorizer.fit_transform(docs).toarray()
+dtm = vectorizer.fit_transform(periods).toarray()
 vocab = np.array(vectorizer.get_feature_names())
 
 from sklearn import decomposition
 num_topics = 20
 num_top_words = 20
-clf = decomposition.LatentDirichletAllocation(n_components=num_topics, random_state=1)
+clf = decomposition.LatentDirichletAllocation(n_topics=num_topics, random_state=1)
 
 
    
