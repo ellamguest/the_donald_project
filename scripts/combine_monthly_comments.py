@@ -56,6 +56,8 @@ from gensim import corpora, models
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+month_docs = pickle.load(open('/Users/emg/Programmming/GitHub/the_donald_project/tidy_data/monthly_comments.p','rb'))    
+
 dictionary = corpora.Dictionary.load('/tmp/td_dictionary.dict')
 dict_map = dictionary.id2token
 

@@ -1,0 +1,76 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 20 13:59:59 2017
+
+@author: emg
+"""
+
+import requests
+from bs4 import BeautifulSoup
+from scraping_functions import make_soup
+
+'''
+experimenting with identifying exact changes between sidebar revisions
+here snap is the first revision pade
+ross then comes after
+'''
+
+snap = 'https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=571c21de-b33c-11e6-8543-0e53646228d0'
+ross = 'https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=c93d2414-b3ac-11e6-9777-0e8c8e218a84'
+
+'''
+know ross changed 'Happy Thanksgiving' to 'Literally a cuck.' with hyperlink
+https://i.sli.mg/w3RfvH.jpg - no longer works
+'''
+
+
+bs1 = make_soup(snap)
+bs2 = make_soup(ross)
+
+bs1.html.body.children
+
+headers = {'user-agent': 'why_ask_reddit 1.0'}
+r = requests.get(snap, headers=headers)
+
+table_data = [[cell.text for cell in row("td")]
+                         for row in BeautifulSoup(html_data)("tr")]
+
+import re
+
+MATCH_ALL = r'.*'
+
+def like(string):
+    """
+    Return a compiled regular expression that matches the given
+    string with any prefix and postfix, e.g. if string = "hello",
+    the returned regex matches r".*hello.*"
+    """
+    string_ = string
+    if not isinstance(string_, str):
+        string_ = str(string_)
+    regex = MATCH_ALL + re.escape(string_) + MATCH_ALL
+    return re.compile(regex, flags=re.DOTALL)
+
+
+def find_by_text(soup, text, tag, **kwargs):
+    """
+    Find the tag in soup that matches all provided kwargs, and contains the
+    text.
+
+    If no match is found, return None.
+    If more than one match is found, raise ValueError.
+    """
+    elements = soup.find_all(tag, **kwargs)
+    matches = []
+    for element in elements:
+        if element.find(text=like(text)):
+            matches.append(element)
+    if len(matches) > 1:
+        raise ValueError("Too many matches:\n" + "\n".join(matches))
+    elif len(matches) == 0:
+        return 'nothing found!'
+    else:
+        return matches[0]
+
+find_by_text(bs1, 'Happy Thanksgiving!', 'content_md')

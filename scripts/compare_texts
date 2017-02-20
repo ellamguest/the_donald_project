@@ -1,0 +1,83 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 20 14:38:44 2017
+
+@author: emg
+"""
+import difflib
+
+attrs = ['table', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+
+for attr in attrs:
+    x = bs1.find_all(attr)
+    y = bs2.find_all(attr)
+    if x != y:
+        print attr
+
+diff = ['div','h4']
+
+
+len(bs1.find_all('h4')) == len(bs2.find_all('h4'))
+
+for i in range(len()):
+    if bs1.find_all('div')[i] != bs2.find_all('div')[i]:
+        print i
+        
+9
+19
+29
+30
+38
+43
+46
+47
+
+diff = difflib.unified_diff(bs1.find_all('div')[9].text,bs2.find_all('div')[9].text, lineterm='')
+
+
+
+d = difflib.Differ()
+diff = d.compare(x,y)
+''.join(diff)
+            
+x = bs1.find_all('h4')[1].text
+y = bs2.find_all('h4')[1].text
+                
+div1 = bs1.find_all('div')[9].text            
+div2 = bs2.find_all('div')[9].text                               
+diff = d.compare(div1,div2)
+'\n'.join(diff)
+
+seq = difflib.SequenceMatcher(a=div1,b=div2)
+matches = seq.get_matching_blocks()
+
+seq.ratio()
+
+seq = difflib.SequenceMatcher(a=x,b=y)
+seq.ratio()
+
+def find_changes(a,b):
+    seq = difflib.SequenceMatcher(a=div1,b=div2)
+    matches = seq.get_matching_blocks()
+    for match in matches:
+        x,y,z = match[0],match[1],match[2]
+        print 'A: {}'.format(a[x:z])
+        print 'B: {}'.format(a[y:z])
+
+find_changes(div1,div2)
+
+A = zip(*matches)[0]
+B = zip(*matches)[0]
+
+Apairs = []
+n = 1
+while n < len(A):
+    Apairs.append(A[n:n+2])
+    n +=1
+
+Bpairs = []
+n = 1
+while n < len(B):
+    Bpairs.append(B[n:n+2])
+    n +=1   
