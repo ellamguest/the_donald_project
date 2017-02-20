@@ -5,40 +5,94 @@ Created on Mon Feb 20 14:38:44 2017
 
 @author: emg
 """
+import requests
+from bs4 import BeautifulSoup
+from scraping_functions import make_soup
 import difflib
 
-attrs = ['table', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+bs1 = make_soup('https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=5c07e0f6-2936-11e6-b039-0e8f7c3b5f23')
+bs2 = make_soup('https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=cc6b82d0-29b3-11e6-a6ef-0ed5134bca11')
+bs3 = make_soup('https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=ea31f2fe-29b3-11e6-937e-0ed5134bca11')
+bs4 = make_soup('https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=fd033972-29b5-11e6-b2bf-0e8a79995169')
 
-for attr in attrs:
-    x = bs1.find_all(attr)
-    y = bs2.find_all(attr)
-    if x != y:
-        print attr
-
-diff = ['div','h4']
+check_changed_attrs(bs3, bs4)
+objs = find_changed_obj(bs3,bs4,'li')
 
 
-len(bs1.find_all('h4')) == len(bs2.find_all('h4'))
+bs3 = make_soup('https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=38ad7f3e-178a-11e6-8eb1-0e7189ea5da3')
+bs4 = make_soup('https://www.reddit.com/r/The_Donald/wiki/config/sidebar?v=6d797f3e-1798-11e6-a862-0e1cf5898867')
 
-for i in range(len()):
-    if bs1.find_all('div')[i] != bs2.find_all('div')[i]:
-        print i
-        
-9
-19
-29
-30
-38
-43
-46
-47
+check_changed_attrs(bs3, bs4)
+find_changed_obj(bs3,bs4,'li')
 
-diff = difflib.unified_diff(bs1.find_all('div')[9].text,bs2.find_all('div')[9].text, lineterm='')
+def check_changed_attrs(soup1, soup2):    
+    attrs = ['table', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+             'li', 'div']
+    changed = []
+    for attr in attrs:
+        x = soup1.find_all(attr)
+        y = soup2.find_all(attr)
+        if x != y:
+            changed.append(attr)
+    print changed
+    return changed
 
+check_changed_attrs(bs1, bs2)
 
+def find_changed_obj(soup1, soup2, attr):
+    objs = []
+    if len(soup1.find_all(attr)) != len(soup2.find_all(attr)):
+         print 'Number of tables does not match'
+         print len(soup1.find_all(attr)), len(soup2.find_all(attr))
+    for i in range(len(soup1.find_all(attr))):
+        if soup1.find_all(attr)[i] != soup2.find_all(attr)[i]:
+            print i
+            objs.append((soup1.find_all(attr)[i], soup2.find_all(attr)[i]))
+    return objs
 
+    
+find_changed_obj(bs2,bs3,'table')
+
+def compare_table(soup1, soup2, table_num):
+    ''' compares soup1 and soup2 table_num
+        states what cells were added or removed
+    '''
+    cellsA = soup1.find_all('table')[table_num].find_all('td')
+    cellsB = soup2.find_all('table')[table_num].find_all('td')
+    
+    for cell in cellsA:
+        if cell not in cellsB:
+            print 'The revision removed - {}'.format(cell.text)
+            print ''
+    for cell in cellsB:
+        if cell not in cellsA:
+            print 'The revision added -  {}'.format(cell.text)
+            print ''
+    return
+
+compare_table(bs2,bs3,1)
+
+objs = find_changed_obj(bsA,bsC,'li')
+A = zip(objs[0],objs[1])[0]
+B = zip(objs[0],objs[1])[1]
+diff = difflib.ndiff(A,B)
+seq = difflib.SequenceMatcher(objs[0],objs[1])
+''.join(diff)
+
+def compare_list_item(soup1, soup2):
+    objs = find_changed_obj(soup1,soup2,'li')
+    print 'There are {} different list items'.format(len(objs))
+    for obj in objs:
+        print 'Page 1 had - {}'.format(obj[0])
+        print 'Page 2 had - {}'.format(obj[1])
+        print ''
+
+compare_list_item(bsA,bsC)
+    
+
+diff = difflib.context_diff(bs1.find_all('div')[9].text,bs2.find_all('div')[9].text, lineterm='')
 d = difflib.Differ()
-diff = d.compare(x,y)
+diff = d.compare(objs[0],objs[1])
 ''.join(diff)
             
 x = bs1.find_all('h4')[1].text
