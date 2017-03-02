@@ -60,7 +60,7 @@ s = s[s>0]
 weeks = weeks[s.index]
 
   
-cg = sns.clustermap(weeks.T, row_cluster=False)
+cg = sns.clustermap(weeks.T, row_cluster=True)
 #plt.yticks(rotation=0)
 plt.gcf().set_size_inches(12, 24)
 
