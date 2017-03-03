@@ -15,6 +15,7 @@ df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all
 #ap = df[df['permissions']=='+all']
 
 
+
 subset = (df[['name', 'date', 'pubdate']].copy()
             .assign(
                 date=lambda df: df['date'].pipe(pd.to_datetime).dt.normalize(),
