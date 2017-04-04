@@ -1,0 +1,30 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr  3 21:36:50 2017
+
+@author: emg
+"""
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+
+# convert to week by mod mat using evet_vis_andy
+weeks = pd.read_csv('/Users/emg/Programming/GitHub/the_donald_project/tidy_data/mod_weeks.csv',
+                    index_col=0)
+s = weeks.sum()
+s = s[s>0]
+weeks = weeks[s.index]
+
+
+# PLOT HEATMAP
+cg = sns.clustermap(weeks, row_cluster=False , figsize=(13,9))
+plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
+cg.ax_heatmap.set_title('Timeline of Moderator Presence', fontsize=20)
+cg.ax_heatmap.set_xlabel('Moderator', fontsize=15)
+cg.ax_heatmap.set_ylabel('Date (in weeks)', fontsize=15)
+plt.savefig('/Users/emg/Google Drive/PhD/presenting/ss_phd_seminar_april_17/visuals/td_mod_week.png', figsize=(16,12))
+

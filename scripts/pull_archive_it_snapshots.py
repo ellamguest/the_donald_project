@@ -24,7 +24,7 @@ users = urls[5:-3]
  
 mod_info = compile_dfs(users)
 mod_info.rename(columns={'Unnamed: 0':'rank'}, inplace=True)
-mod_info.to_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv')
+mod_info.to_csv('/Users/emg/Programming/GitHub/the_donald_project/raw_data/all_mods_archive_it_04_17.csv')
 
-df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it.csv', index_col=0)
+df = pd.read_csv('/Users/emg/Programmming/GitHub/the_donald_project/raw_data/all_mods_archive_it(04/17).csv', index_col=0)
  
