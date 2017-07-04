@@ -6,6 +6,8 @@ Created on Mon Apr 10 12:30:25 2017
 @author: emg
 """
 
+import glob
+import re
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -32,11 +34,9 @@ def save_snapshot(time):
 for time in times:
     save_snapshot(time)
 
-
 def load_snapshot(time):
     f = open("/Users/emg/Google Drive/PhD/data/the_donald/td-wbm-snapshots/td-wbm-{}.html".format(time), 'r')
     return f.read() 
-
     
 def snapshot_df(html):
     soup = BeautifulSoup(html, 'html.parser')
@@ -71,18 +71,32 @@ def compile_dfs(times):
             dfs.append(df)
         else:
             errors.append(time)
-    
-    len(dfs) + len(errors) == len(times)
-
+   
     df = pd.concat(dfs)
     df.reset_index(inplace=True)
     df.columns = ['name', 'date','permissions','karma','pubdate']
     df['date'] = pd.to_datetime(df['date'])
     df['pubdate'] = pd.to_datetime(df['pubdate'].astype(str), format='%Y%m%d%H%M%S')
     df['karma'] = df['karma'].map(lambda x: x[1:-1])
+    return df
 
-df.to_csv('/Users/emg/Programming/GitHub/the_donald_project/raw_data/td-wbm-snaps-100417.csv')
+def update_snapshots(times):
+    filenames = glob.glob("/Users/emg/Google Drive/PhD/data/the_donald/td-wbm-snapshots/td-wbm-*.html")
+    old_times = [re.findall(r'\d+', fn)[0] for fn in filenames]
+    for time in times:
+        if time not in old_times:
+            save_snapshot(time)
 
 
-wbm = pd.read_csv('/Users/emg/Programming/GitHub/the_donald_project/raw_data/td-wbm-snaps-100417.csv', index_col=0)
+# update df
+def run():
+    update_snapshots(times)
+
+    df = compile_dfs(times)
+
+    df.to_csv('/Users/emg/Programming/GitHub/mod-timelines/raw-data/wbm-mod-df.csv')
+
+run()
+
+wbm = pd.read_csv('/Users/emg/Programming/GitHub/mod-timelines/raw-data/wbm-mod-df.csv', index_col=0)
 
